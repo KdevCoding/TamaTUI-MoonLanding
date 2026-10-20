@@ -4,33 +4,35 @@ import curses
 stdscr = curses.initscr()
 
 
-class rocket():
+class Rocket():
     def __init__(self, pos=(1,0)):
         self.pos = pos
     
     def move(self, amount):
         self.pos = tuple(x + y for x, y in zip(self.pos, amount))
-        
+
+
+class Game_screen():
+    def __init__(self, stdscr):
+        self.y, self.x = stdscr.getmaxyx()
+    
+    def resize(self):
+        self.y, self.x = stdscr.getmaxyx()
+
 def main(stdscr):
     stdscr.clear()
-    
+    scr = Game_screen(stdscr)
     text = "GameOver you got lost"
     t = 0
     i = 0
     key = 0
-    h, w = stdscr.getmaxyx()
-    x = (w // 2)
-    y = h // 2
     stdscr.nodelay(True)
-    ship = rocket(pos=(2, x))
+    ship = Rocket(pos=(2, (scr.x // 2)))
     while True:
         t += 1
         stdscr.clear()
         stdscr.addstr(0, 0, f'input: {key} count: {i} __{t}__')
-        
-        h, w = stdscr.getmaxyx()
-        x = (w // 2) - (len(text) // 2)
-        y = h // 2
+        scr.resize()
         
         try:
             key = stdscr.getch()
@@ -51,7 +53,7 @@ def main(stdscr):
             stdscr.addstr(ship.pos[0], ship.pos[1],'<.>')
         except:
             stdscr.clear()
-            stdscr.addstr(y, x, text)
+            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len(text) // 2), text)
             stdscr.refresh()
             sleep(5)
             break
