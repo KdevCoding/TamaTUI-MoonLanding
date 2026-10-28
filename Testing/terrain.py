@@ -49,22 +49,30 @@ class Terrain:
     def wavelen_0(self):
         return self.__wavelen_0
 
+    def __surface_row(self, col):
+        """Return the pad row of the terrain surface at a given column.
+
+        Row 0 is the top of the pad, so a larger row means lower on screen.
+        """
+        span = (self.__width - 1) or 1
+        t = col / span
+
+        x0 = self.__min_x0 + t * (self.__max_x0 - self.__min_x0) + self.__offset_x0
+        x1 = self.__min_x1 + t * (self.__max_x1 - self.__min_x1) + self.__offset_x1
+        x2 = self.__min_x2 + t * (self.__max_x2 - self.__min_x2) + self.__offset_x2
+
+        y = math.sin(x0) / 2 + math.sin(x1) / 3 + math.sin(x2) / 6
+
+        """Map y from [min_y, max_y] onto [0, height-1], flipped so up is up"""
+        norm = (y - self.__min_y) / (self.__max_y - self.__min_y)
+        return (self.__height - 1) - int(norm * (self.__height - 1))
+
     def __render(self):
         """cycle through the pad width and draw each column"""
         self.__pad.erase()
-        span = (self.__width - 1) or 1
 
         for col in range(self.__width):
-            t = col / span
-            x0 = self.__min_x0 + t * (self.__max_x0 - self.__min_x0) + self.__offset_x0
-            x1 = self.__min_x1 + t * (self.__max_x1 - self.__min_x1) + self.__offset_x1
-            x2 = self.__min_x2 + t * (self.__max_x2 - self.__min_x2) + self.__offset_x2
-
-            y = math.sin(x0) / 2 + math.sin(x1) / 3 + math.sin(x2) / 6
-
-            """Map y from [min_y, max_y] onto [0, height-1], flipped so up is up"""
-            norm = (y - self.__min_y) / (self.__max_y - self.__min_y)
-            row = (self.__height - 1) - int(norm * (self.__height - 1))
+            row = self.__surface_row(col)
 
             if 0 <= row < self.__height:
                 try:
@@ -72,6 +80,18 @@ class Terrain:
                 except curses.error:
                     """bottom-right cell raises safe to ignore"""
                     pass
+
+    def is_below(self, x, y):
+        """True if the point (x, y) is on or below the terrain curve.
+
+        x is a pad column and y is a pad row (row 0 = top), the same
+        coordinates the terrain is drawn in.
+        """
+        col = max(0, min(self.__width - 1, int(x)))  # clamp to the pad
+        return int(y) >= self.__surface_row(col)
+
+    def is_above(self, x, y):
+        return not self.is_below(x, y)
 
     def label(self, row, text, col=0):
         """Write overlay text onto the pad so it ends up in the same refresh."""
