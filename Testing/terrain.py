@@ -34,7 +34,22 @@ class Terrain:
 
         """off screen canvas, drawn here first"""
         self.__pad = curses.newpad(self.__height, self.__width)
+        self.__breadth = 5
+        self.__land = self.__landing()
         self.__render()
+
+    def __landing(self):
+        """cycle through the pad width and find possible landing sites"""
+        locations = []
+
+        for col in range(self.__breadth, self.__width - self.__breadth):
+            first = self.__surface_row(col)
+            if all(self.__surface_row(col + i) == first for i in range(1, self.__breadth)):
+                locations.append(col)
+
+        if locations:
+            return random.choice(locations)
+        return 0
 
     """private values for HUD placement"""
     @property
@@ -52,7 +67,7 @@ class Terrain:
     def __surface_row(self, col):
         """Return the pad row of the terrain surface at a given column.
 
-        Row 0 is the top of the pad, so a larger row means lower on screen.
+        0,0 is top left - max vals are 'bottom right' of screen
         """
         span = (self.__width - 1) or 1
         t = col / span
@@ -70,13 +85,24 @@ class Terrain:
     def __render(self):
         """cycle through the pad width and draw each column"""
         self.__pad.erase()
+        shape = '*'
 
         for col in range(self.__width):
+
+            if col == self.__land - 1:
+                shape = '|'
+            if col == self.__land:
+                shape = '_'
+            if col == self.__land + self.__breadth:
+                shape = '|'
+            if col > self.__land + self.__breadth:
+                shape = '*'
+
             row = self.__surface_row(col)
 
             if 0 <= row < self.__height:
                 try:
-                    self.__pad.addch(row, col, '*')
+                    self.__pad.addch(row, col, shape)
                 except curses.error:
                     """bottom-right cell raises safe to ignore"""
                     pass
@@ -116,8 +142,6 @@ def draw_graph(stdscr):
         if terrain is None:
             terrain = Terrain(height, width)
 
-        # terrain.label(0, f" offset_x0 = {terrain.offset_x0:.2f} ", col=2)
-        # terrain.label(1, f" wavelen_0 = {terrain.wavelen_0:.2f} ", col=2)
         terrain.label(height - 1, "Press any key for a new shape, or q to quit...")
 
         terrain.show()
