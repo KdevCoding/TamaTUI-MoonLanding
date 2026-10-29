@@ -21,27 +21,65 @@ class Game_screen():
     def resize(self):
         self.y, self.x = stdscr.getmaxyx()
 
+
+class Menu():
+    def __init__(self, stdscr, scr):
+        self.y = scr.y
+        self.x = scr.x
+        self.stdscr = stdscr
+        self.state = True
+        self.screen = "MM"
+        
+    def main_menu(self):
+        Text= ["S: Start", "O: Options", "E: Exit"]
+        for i, option in enumerate(Text):
+            stdscr.addstr((self.y // 2) + i, (self.x // 2) - (len(option) // 2), option)
+    
+    def display(self):
+        if self.screen == "MM":
+            self.main_menu()
+        try:
+            key = stdscr.getch()
+            if key != -1:
+                if key == 115: #s
+                    self.state = False
+                elif key == 111: #o
+                    pass
+                elif key == 101: #e
+                    exit()                
+        except curses.error:
+            pass
+        
 def main(stdscr):
     scr = Game_screen(stdscr)
 
-    text = "GameOver you got lost"
     t = 0
     i = 0
     key = 0
-    stdscr.nodelay(True)
+    stdscr.nodelay(False)
     curses.curs_set(0)
     ship = Rocket(pos=(2, (scr.x // 2)))
+    menu = Menu(stdscr, scr)
     terrain = Terrain(scr.y, scr.x)
     blank_win = curses.newwin(1, 5, ship.pos[0], ship.pos[1])
     terrain.show()
     while True:
+        while menu.state:
+            menu.display()
         curses.flushinp()
         sleep(0.01)
         stdscr.move(0, 0)
         stdscr.clrtoeol()
         blank_win.clear()
-        blank_win.mvwin(ship.pos[0], ship.pos[1])
-    
+        try:
+            blank_win.mvwin(ship.pos[0], ship.pos[1])
+        except:
+            stdscr.clear()
+            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
+            stdscr.refresh()
+            menu.state = True
+            sleep(5)
+            break
         t += 1
         terrain.show()
         stdscr.addstr(0, 0, f'input: {key} count: {i} __{t}__')
@@ -66,8 +104,9 @@ def main(stdscr):
             blank_win.addstr(0, 1,'<.>')
         except:
             stdscr.clear()
-            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len(text) // 2), text)
+            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2))
             stdscr.refresh()
+            menu.state = True
             sleep(5)
             break
         blank_win.refresh()

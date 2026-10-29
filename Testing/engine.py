@@ -31,6 +31,53 @@ class Player:
     def move(self, speed):
         self.pos = tuple(x + y for x, y in zip(self.pos, speed))
 
+    def reset(self):
+        self.pos = (1,0)
+
+class Menu():
+    def __init__(self, stdscr, scr):
+        self.y = scr.y
+        self.x = scr.x
+        self.stdscr = stdscr
+        self.state = True
+        self.screen = "MM"
+        self.dif = "Easy"
+        
+        
+    def main_menu(self):
+        MM= ["S: Start", f"E|M|H: {self.dif}", "Q: Quit"]
+        for i, option in enumerate(MM):
+            stdscr.addstr((self.y // 2) + i, (self.x // 2) - (len(option) // 2), option)
+    
+    def refresh(self, stdscr):
+        stdscr.clear()
+        self.main_menu()
+        stdscr.refresh
+
+    def display(self, stdscr, scr, terrain):
+        stdscr.nodelay(False)
+        scr.resize()
+        self.refresh(stdscr)
+        while self.state == True:
+            key = stdscr.getch()
+            if key != -1:
+                if key == 115: #s
+                    self.state = False
+                    stdscr.clear()
+                    stdscr.nodelay(True)
+                    terrain.show()
+                elif key == 111: #o
+                    pass
+                elif key == 101: #e
+                    self.dif = "Easy"
+                elif key == 109: #m
+                    self.dif = "Medium"
+                elif key == 104: #h
+                    self.dif = "Hard"   
+                elif key == 113: #q
+                    exit()              
+                self.refresh(stdscr)
+
 class Engine:
     def __init__(self, 
                  screen: curses.window,
@@ -40,11 +87,11 @@ class Engine:
         self.fall = self.determine_diff(difficulty)
 
     def determine_diff(self, config):
-        if config == 'moon':
+        if config == 'Easy': #moon
             return (2)
-        elif config == 'mars':
+        elif config == 'Medium': #mars
             return (5)
-        elif config == 'earth':
+        elif config == 'Hard': #earth
             return (10)
         else:
             return (False)
@@ -54,13 +101,14 @@ class Engine:
             if key != -1:
                 i += 1
                 if key == 119 or key == 259: #w
-                    self.hip.move((-1,0))
+                    self.ship.move((-1,0))
                 elif key == 115 or key == 258: #s
                     self.ship.move((1,0))
                 elif key == 97 or key == 260: #a
                     self.ship.move((0.-1))
                 elif key == 100 or key == 261: #d
                     self.ship.move((0,1))
+
         except curses.error:
             stdscr.addstr(scr.y // 2,
                           (scr.x //2) - (len("uh oh key") // 2),
@@ -87,24 +135,34 @@ def main(stdscr):
     t = 0
     i = 0
     key = 0
-    stdscr.nodelay(True)
-    curses.curs_set(0)
     ship = Player()
-    physics = Engine(stdscr, ship, 'mars')
-    terrain = Terrain(scr.y, scr.x)
-    blank_win = curses.newwin(1,5,ship.pos[0], ship.pos[1])
-    terrain.show()
+    menu = Menu(stdscr, scr)
+    curses.curs_set(0)
     while True:
+        if menu.state == True:
+            terrain = Terrain(scr.y, scr.x)
+            blank_win = curses.newwin(1,5,ship.pos[0], ship.pos[1])
+            menu.display(stdscr, scr, terrain)
+            ship.reset()
+            physics = Engine(stdscr, ship, menu.dif)
         curses.flushinp()
         sleep(0.05)
         stdscr.move(0, 0)
         stdscr.clrtoeol()
         blank_win.clear()
-        blank_win.mvwin(ship.pos[0], ship.pos[1])
+        try:
+            blank_win.mvwin(ship.pos[0], ship.pos[1])
+        except curses.error:
+            stdscr.clear()
+            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
+            stdscr.refresh()
+            menu.state = True
+            sleep(5)
+            continue
 
         t += 1
         terrain.show()
-        stdscr.addstr(0, 0, f'input: {key} count: {i} __{t}__')
+        stdscr.addstr(0, 0, f'dif: {menu.dif} __{t}__')
         scr.resize()
         physics.control(stdscr.getch(), scr, i)
         physics.clean_up(scr, blank_win, ship)
