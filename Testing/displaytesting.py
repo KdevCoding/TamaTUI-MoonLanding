@@ -56,7 +56,7 @@ def main(stdscr):
     t = 0
     i = 0
     key = 0
-    stdscr.nodelay(False)
+    stdscr.nodelay(True)
     curses.curs_set(0)
     ship = Rocket(pos=(2, (scr.x // 2)))
     menu = Menu(stdscr, scr)

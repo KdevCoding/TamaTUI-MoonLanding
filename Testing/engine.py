@@ -34,6 +34,24 @@ class Player:
     def reset(self):
         self.pos = (1,0)
 
+    def control(self, key, scr, i):
+        try:
+            if key != -1:
+                i += 1
+                if key == 119 or key == 259: #w
+                    self.move((-1,0))
+                elif key == 115 or key == 258: #s
+                    self.move((1,0))
+                elif key == 97 or key == 260: #a
+                    self.move((0,-1))
+                elif key == 100 or key == 261: #d
+                    self.move((0,1))
+
+        except curses.error:
+            stdscr.addstr(scr.y // 2,
+                          (scr.x //2) - (len("uh oh key") // 2),
+                          "uh oh key")
+            pass
 class Menu():
     def __init__(self, stdscr, scr):
         self.y = scr.y
@@ -82,11 +100,11 @@ class Engine:
     def __init__(self, 
                  screen: curses.window,
                  ship: Player,
-                 difficulty='moon'):
+                 difficulty='Easy'):
         self.ship = ship
-        self.fall = self.determine_diff(difficulty)
+        self.fall = self.determine_fall(difficulty)
 
-    def determine_diff(self, config):
+    def determine_fall(self, config):
         if config == 'Easy': #moon
             return (2)
         elif config == 'Medium': #mars
@@ -96,25 +114,29 @@ class Engine:
         else:
             return (False)
 
-    def control(self, key, scr, i):
+    def game_loop(self, scr, blank_win):
+        curses.flushinp()
+        sleep(0.01)
+        stdscr.move(0, 0)
+        stdscr.clrtoeol()
+        blank_win.clear()
         try:
-            if key != -1:
-                i += 1
-                if key == 119 or key == 259: #w
-                    self.ship.move((-1,0))
-                elif key == 115 or key == 258: #s
-                    self.ship.move((1,0))
-                elif key == 97 or key == 260: #a
-                    self.ship.move((0.-1))
-                elif key == 100 or key == 261: #d
-                    self.ship.move((0,1))
-
+            blank_win.mvwin(ship.pos[0], ship.pos[1])
         except curses.error:
-            stdscr.addstr(scr.y // 2,
-                          (scr.x //2) - (len("uh oh key") // 2),
-                          "uh oh key")
-            pass
+            stdscr.clear()
+            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
+            stdscr.refresh()
+            menu.state = True
+            sleep(5)
+            continue
 
+        t += 1
+        terrain.show()
+        stdscr.addstr(0, 0, f'dif: {menu.dif} __{t}__')
+        scr.resize()
+        self.control(stdscr.getch(), scr, i)
+        self.clean_up(scr, blank_win, ship)
+        
     def clean_up(self, scr, blank_win, ship):
         try:
             blank_win.addstr(0,1, ship.shape)
@@ -145,27 +167,8 @@ def main(stdscr):
             menu.display(stdscr, scr, terrain)
             ship.reset()
             physics = Engine(stdscr, ship, menu.dif)
-        curses.flushinp()
-        sleep(0.05)
-        stdscr.move(0, 0)
-        stdscr.clrtoeol()
-        blank_win.clear()
-        try:
-            blank_win.mvwin(ship.pos[0], ship.pos[1])
-        except curses.error:
-            stdscr.clear()
-            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
-            stdscr.refresh()
-            menu.state = True
-            sleep(5)
-            continue
-
-        t += 1
-        terrain.show()
-        stdscr.addstr(0, 0, f'dif: {menu.dif} __{t}__')
-        scr.resize()
-        physics.control(stdscr.getch(), scr, i)
-        physics.clean_up(scr, blank_win, ship)
+    
+        
 
 if __name__ == "__main__":
     stdscr = curses.initscr()
