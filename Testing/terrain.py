@@ -7,10 +7,20 @@ import random
 class Terrain:
     """generate terrain shape & render to curses pad"""
 
-    def __init__(self, height, width):
+    def __init__(self, height, width, difficulty="Easy"):
         """all of the sin wave values"""
         self.__height = height
         self.__width = width
+
+        if difficulty == "Easy":
+            self.__amplitude = 5
+            self.__breadth = 9
+        elif difficulty == "Medium":
+            self.__amplitude = 3
+            self.__breadth = 6
+        elif difficulty == "Hard":
+            self.__amplitude = 1.5
+            self.__breadth = 3
 
         self.__offset_x0 = random.uniform(0, 9)
         self.__offset_x1 = random.uniform(0, 6)
@@ -28,13 +38,11 @@ class Terrain:
         self.__min_x1 = -self.__max_x1
         self.__min_x2 = -self.__max_x2
 
-        self.__amplitude = 2.5
         self.__min_y = -self.__amplitude
         self.__max_y = self.__amplitude
 
         """off screen canvas, drawn here first"""
         self.__pad = curses.newpad(self.__height, self.__width)
-        self.__breadth = 5
         self.__land = self.__landing()
         self.__render()
 
@@ -140,7 +148,7 @@ def draw_graph(stdscr):
         height, width = stdscr.getmaxyx()
 
         if terrain is None:
-            terrain = Terrain(height, width)
+            terrain = Terrain(height, width, "Hard")
 
         terrain.label(height - 1, "Press any key for a new shape, or q to quit...")
 
