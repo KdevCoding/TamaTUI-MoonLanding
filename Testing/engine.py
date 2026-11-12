@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-""""""
-
 import curses
 from curses import wrapper
 from time import sleep
@@ -54,8 +50,7 @@ class Player:
             pass
 class Menu():
     def __init__(self, stdscr, scr):
-        self.y = scr.y
-        self.x = scr.x
+        self.scr = scr
         self.stdscr = stdscr
         self.state = True
         self.screen = "MM"
@@ -66,10 +61,11 @@ class Menu():
     def main_menu(self):
         MM= ["S: Start", f"E|M|H: {self.dif}", "Q: Quit"]
         for i, option in enumerate(MM):
-            stdscr.addstr((self.y // 2) + i, (self.x // 2) - (len(option) // 2), option)
+            stdscr.addstr((self.scr.y // 2) + i, (self.scr.x // 2) - (len(option) // 2), option)
     
     def refresh(self, stdscr):
         stdscr.clear()
+
         self.main_menu()
         stdscr.refresh
 
