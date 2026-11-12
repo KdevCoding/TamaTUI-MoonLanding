@@ -114,18 +114,21 @@ class Terrain:
                 except curses.error:
                     """bottom-right cell raises safe to ignore"""
                     pass
-
-    def is_below(self, x, y):
-        """True if the point (x, y) is on or below the terrain curve.
+    
+    def landed(self, pos):
+        return pos[1] in range(self.__land, self.__land + self.__breadth + 1)
+    
+    def is_below(self, pos):
+        """True if the point (y, x) is on or below the terrain curve.
 
         x is a pad column and y is a pad row (row 0 = top), the same
         coordinates the terrain is drawn in.
         """
-        col = max(0, min(self.__width - 1, int(x)))  # clamp to the pad
-        return int(y) >= self.__surface_row(col)
+        col = max(0, min(self.__width - 1, int(pos[1])))  # clamp to the pad
+        return int(pos[0]) >= self.__surface_row(col)
 
-    def is_above(self, x, y):
-        return not self.is_below(x, y)
+    def is_above(self, pos):
+        return not self.is_below(pos)
 
     def label(self, row, text, col=0):
         """Write overlay text onto the pad so it ends up in the same refresh."""

@@ -55,7 +55,7 @@ class Menu():
         self.state = True
         self.screen = "MM"
         self.dif = "Easy"
-        self.game = Engine(scr)
+        
         
         
     def main_menu(self):
@@ -79,6 +79,7 @@ class Menu():
                 if key == 115: #s
                     stdscr.clear()
                     stdscr.nodelay(True)
+                    self.game = Engine(self.dif)
                     self.game.start(stdscr, scr)
                     curses.flushinp()
                     
@@ -98,7 +99,8 @@ class Engine:
     def __init__(self, 
                  difficulty='Easy'):
         self.ship = Player()
-        self.fall = self.determine_fall(difficulty)
+        self.difficulty = difficulty
+        self.fall = self.determine_fall(self.difficulty)
     
     def determine_fall(self, config):
         if config == 'Easy': #moon
@@ -113,7 +115,7 @@ class Engine:
     def start(self, stdscr, scr):
         self.ship.reset()
         scr.resize()
-        terrain = Terrain(scr.y, scr.x)
+        terrain = Terrain(scr.y, scr.x, self.difficulty)
         blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
         terrain.show()
         self.loop(stdscr, scr, blank_win, terrain)  
@@ -127,19 +129,26 @@ class Engine:
             try:
                 blank_win.mvwin(self.ship.pos[0], self.ship.pos[1])
             except curses.error:
-                stdscr.clear()
-                stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
-                stdscr.refresh()
-                curses.flushinp()
-                sleep(5)
+                self.end_screen(stdscr, scr, "GameOver you got lost")
                 break
-
-
             #terrain.show()
             scr.resize()
             self.ship.control(stdscr.getch(), scr)
             self.clean_up(scr, blank_win)
-        
+            if terrain.is_below(self.ship.pos):
+                if terrain.landed(self.ship.pos):
+                    text = "Congrats you landed!"
+                else:
+                    text = "GameOver you hit the terrain"
+                self.end_screen(stdscr, scr, text)
+                break
+    def end_screen(self, stdscr, scr, text):
+        stdscr.clear()
+        stdscr.addstr(scr.y // 2, (scr.x // 2) - (len(text) // 2), text)
+        stdscr.refresh()
+        curses.flushinp()
+        sleep(5)
+
     def clean_up(self, scr, blank_win):
         try:
             blank_win.addstr(0,1, self.ship.shape)
