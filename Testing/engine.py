@@ -29,15 +29,15 @@ class Player:
         self.__pos = pos
 
     def move(self, speed):
+        curses.flushinp()
         self.pos = tuple(x + y for x, y in zip(self.pos, speed))
 
     def reset(self):
         self.pos = (1,0)
 
-    def control(self, key, scr, i):
+    def control(self, key, scr):
         try:
             if key != -1:
-                i += 1
                 if key == 119 or key == 259: #w
                     self.move((-1,0))
                 elif key == 115 or key == 258: #s
@@ -60,6 +60,7 @@ class Menu():
         self.state = True
         self.screen = "MM"
         self.dif = "Easy"
+        self.game = Engine(scr)
         
         
     def main_menu(self):
@@ -72,18 +73,19 @@ class Menu():
         self.main_menu()
         stdscr.refresh
 
-    def display(self, stdscr, scr, terrain):
-        stdscr.nodelay(False)
-        scr.resize()
-        self.refresh(stdscr)
-        while self.state == True:
+    def display(self, stdscr, scr):
+        while True:
+            stdscr.nodelay(False)
+            scr.resize()
+            self.refresh(stdscr)
             key = stdscr.getch()
             if key != -1:
                 if key == 115: #s
-                    self.state = False
                     stdscr.clear()
                     stdscr.nodelay(True)
-                    terrain.show()
+                    self.game.start(stdscr, scr)
+                    curses.flushinp()
+                    
                 elif key == 111: #o
                     pass
                 elif key == 101: #e
@@ -98,12 +100,10 @@ class Menu():
 
 class Engine:
     def __init__(self, 
-                 screen: curses.window,
-                 ship: Player,
                  difficulty='Easy'):
-        self.ship = ship
+        self.ship = Player()
         self.fall = self.determine_fall(difficulty)
-
+    
     def determine_fall(self, config):
         if config == 'Easy': #moon
             return (2)
@@ -114,32 +114,39 @@ class Engine:
         else:
             return (False)
 
-    def game_loop(self, scr, blank_win):
-        curses.flushinp()
-        sleep(0.01)
-        stdscr.move(0, 0)
-        stdscr.clrtoeol()
-        blank_win.clear()
-        try:
-            blank_win.mvwin(ship.pos[0], ship.pos[1])
-        except curses.error:
-            stdscr.clear()
-            stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
-            stdscr.refresh()
-            menu.state = True
-            sleep(5)
-            continue
-
-        t += 1
-        terrain.show()
-        stdscr.addstr(0, 0, f'dif: {menu.dif} __{t}__')
+    def start(self, stdscr, scr):
+        self.ship.reset()
         scr.resize()
-        self.control(stdscr.getch(), scr, i)
-        self.clean_up(scr, blank_win, ship)
+        terrain = Terrain(scr.y, scr.x)
+        blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
+        terrain.show()
+        self.loop(stdscr, scr, blank_win, terrain)  
+          
+    def loop(self, stdscr, scr, blank_win, terrain):
+        while True:
+            terrain.show()
+            #curses.flushinp()
+            sleep(0.01)
+            blank_win.clear()
+            try:
+                blank_win.mvwin(self.ship.pos[0], self.ship.pos[1])
+            except curses.error:
+                stdscr.clear()
+                stdscr.addstr(scr.y // 2, (scr.x // 2) - (len("GameOver you got lost") // 2), "GameOver you got lost")
+                stdscr.refresh()
+                curses.flushinp()
+                sleep(5)
+                break
+
+
+            #terrain.show()
+            scr.resize()
+            self.ship.control(stdscr.getch(), scr)
+            self.clean_up(scr, blank_win)
         
-    def clean_up(self, scr, blank_win, ship):
+    def clean_up(self, scr, blank_win):
         try:
-            blank_win.addstr(0,1, ship.shape)
+            blank_win.addstr(0,1, self.ship.shape)
         except:
             stdscr.clear()
             stdscr.addstr(scr.y // 2,
@@ -148,25 +155,14 @@ class Engine:
             stdscr.refresh()
             sleep(2)
         blank_win.refresh()
-        stdscr.refresh()
         sleep(0.15)
 
 def main(stdscr):
     scr = Game_screen(stdscr)
-    text = "GameOver you got lost"
-    t = 0
-    i = 0
-    key = 0
-    ship = Player()
     menu = Menu(stdscr, scr)
     curses.curs_set(0)
     while True:
-        if menu.state == True:
-            terrain = Terrain(scr.y, scr.x)
-            blank_win = curses.newwin(1,5,ship.pos[0], ship.pos[1])
-            menu.display(stdscr, scr, terrain)
-            ship.reset()
-            physics = Engine(stdscr, ship, menu.dif)
+            menu.display(stdscr, scr)
     
         
 
