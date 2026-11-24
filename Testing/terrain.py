@@ -3,6 +3,28 @@ import curses
 import math
 import random
 
+""" define color pair numbering """
+DIFFICULTY_PAIRS = {
+    "Easy": 1,
+    "Medium": 2,
+    "Hard": 3,
+}
+
+LANDING_PAIR = 4
+
+
+def init_colors():
+    """
+    define the colour pairs for each difficultyt level
+    with a shared pair used for the landing pad
+    """
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(DIFFICULTY_PAIRS["Easy"],   curses.COLOR_GREEN,  -1)
+    curses.init_pair(DIFFICULTY_PAIRS["Medium"], curses.COLOR_YELLOW, -1)
+    curses.init_pair(DIFFICULTY_PAIRS["Hard"],   curses.COLOR_RED,    -1)
+    curses.init_pair(LANDING_PAIR, curses.COLOR_WHITE, -1)
+
 
 class Terrain:
     """generate terrain shape & render to curses pad"""
@@ -14,13 +36,18 @@ class Terrain:
 
         if difficulty == "Easy":
             self.__amplitude = 5
-            self.__breadth = 9
+            self.__breadth = 11
         elif difficulty == "Medium":
             self.__amplitude = 3
-            self.__breadth = 6
+            self.__breadth = 8
         elif difficulty == "Hard":
             self.__amplitude = 1.5
-            self.__breadth = 3
+            self.__breadth = 5
+        else:
+            raise ValueError(f"Unknown difficulty: {difficulty!r}")
+
+        self.__color = curses.color_pair(DIFFICULTY_PAIRS[difficulty])
+        self.__land_color = curses.color_pair(LANDING_PAIR) | curses.A_BOLD
 
         self.__offset_x0 = random.uniform(0, 9)
         self.__offset_x1 = random.uniform(0, 6)
@@ -50,7 +77,7 @@ class Terrain:
         """cycle through the pad width and find possible landing sites"""
         locations = []
 
-        for col in range(self.__breadth, self.__width - self.__breadth):
+        for col in range(self.__breadth * 2, self.__width - (self.__breadth * 2)):
             first = self.__surface_row(col)
             if all(self.__surface_row(col + i) == first for i in range(1, self.__breadth)):
                 locations.append(col)
@@ -97,20 +124,40 @@ class Terrain:
 
         for col in range(self.__width):
 
-            if col == self.__land - 1:
-                shape = '|'
             if col == self.__land:
-                shape = '_'
-            if col == self.__land + self.__breadth:
-                shape = '|'
-            if col > self.__land + self.__breadth:
+                shape = '╞'
+            elif col == self.__land + 1:
+                shape = '╤'
+            elif col == self.__land + self.__breadth - 1:
+                shape = '╡'
+            elif col > self.__land + self.__breadth - 1:
                 shape = '*'
 
             row = self.__surface_row(col)
 
+            """this loop assigns the color pair for terrain & landing pad"""
             if 0 <= row < self.__height:
+                if shape in ('╤', '╞', '╡'):
+                    attr = self.__land_color
+                else:
+                    attr = self.__color
                 try:
-                    self.__pad.addch(row, col, shape)
+                    self.__pad.addch(row, col, shape, attr)
+
+                    """draw the landing pad scaffolding"""
+                    if shape == '╤' and row + 1 < self.__height:
+                        self.__pad.addch(row + 1, col, '┴', attr)
+
+                    """draw left end"""
+                    if shape == '╞' and row + 1 < self.__height:
+                        self.__pad.addch(row - 1, col, '◦', attr)
+                        self.__pad.addch(row + 1, col, '└', attr)
+
+                    """draw right end"""
+                    if shape == '╡' and row + 1 < self.__height:
+                        self.__pad.addch(row - 1, col, '◦', attr)
+                        self.__pad.addch(row + 1, col, '┘', attr)
+
                 except curses.error:
                     """bottom-right cell raises safe to ignore"""
                     pass
@@ -142,13 +189,14 @@ class Terrain:
 
 def draw_graph(stdscr):
     curses.curs_set(0)
+    init_colors()
 
     terrain = None
     while True:
         height, width = stdscr.getmaxyx()
 
         if terrain is None:
-            terrain = Terrain(height, width, "Hard")
+            terrain = Terrain(height, width, "Medium")
 
         terrain.label(height - 1, "Press any key for a new shape, or q to quit...")
 
