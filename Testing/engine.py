@@ -113,12 +113,15 @@ class Engine:
             return (False)
 
     def start(self, stdscr, scr):
-        self.ship.reset()
         scr.resize()
-        terrain = Terrain(scr.y, scr.x, self.difficulty)
-        blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
-        terrain.show()
-        self.loop(stdscr, scr, blank_win, terrain)  
+        if scr.y < 20:
+            self.end_screen(stdscr, scr, f"!!!Please resize screen to be 20 tall (currently {scr.y})!!!")
+        else:
+            self.ship.reset()
+            terrain = Terrain(scr.y, scr.x, self.difficulty)
+            blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
+            terrain.show()
+            self.loop(stdscr, scr, blank_win, terrain)  
           
     def loop(self, stdscr, scr, blank_win, terrain):
         while True:
