@@ -37,12 +37,15 @@ class Terrain:
         if difficulty == "Easy":
             self.__amplitude = 5
             self.__breadth = 11
+            self.__push = 3
         elif difficulty == "Medium":
             self.__amplitude = 3
             self.__breadth = 8
+            self.__push = 1.75
         elif difficulty == "Hard":
             self.__amplitude = 1.5
             self.__breadth = 5
+            self.__push = 0.5
         else:
             raise ValueError(f"Unknown difficulty: {difficulty!r}")
 
@@ -84,6 +87,12 @@ class Terrain:
 
         if locations:
             return random.choice(locations)
+        else:
+            print("no landing location found")
+            return 0
+
+    def get_lights(self):
+        """find the light bulb positions"""
         return 0
 
     """private values for HUD placement"""
@@ -111,7 +120,7 @@ class Terrain:
         x1 = self.__min_x1 + t * (self.__max_x1 - self.__min_x1) + self.__offset_x1
         x2 = self.__min_x2 + t * (self.__max_x2 - self.__min_x2) + self.__offset_x2
 
-        y = math.sin(x0) / 2 + math.sin(x1) / 3 + math.sin(x2) / 6
+        y = (math.sin(x0) / 2 + math.sin(x1) / 3 + math.sin(x2) / 6) - self.__push
 
         """Map y from [min_y, max_y] onto [0, height-1], flipped so up is up"""
         norm = (y - self.__min_y) / (self.__max_y - self.__min_y)
@@ -148,12 +157,12 @@ class Terrain:
                     if shape == '╤' and row + 1 < self.__height:
                         self.__pad.addch(row + 1, col, '┴', attr)
 
-                    """draw left end"""
+                    """draw left end and light bulb"""
                     if shape == '╞' and row + 1 < self.__height:
                         self.__pad.addch(row - 1, col, '◦', attr)
                         self.__pad.addch(row + 1, col, '└', attr)
 
-                    """draw right end"""
+                    """draw right end and light bulb"""
                     if shape == '╡' and row + 1 < self.__height:
                         self.__pad.addch(row - 1, col, '◦', attr)
                         self.__pad.addch(row + 1, col, '┘', attr)
@@ -195,8 +204,9 @@ def draw_graph(stdscr):
     while True:
         height, width = stdscr.getmaxyx()
 
+        """create the terrain object"""
         if terrain is None:
-            terrain = Terrain(height, width, "Medium")
+            terrain = Terrain(height, width, "Hard")
 
         terrain.label(height - 1, "Press any key for a new shape, or q to quit...")
 
