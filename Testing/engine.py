@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import curses
 from curses import wrapper
 from time import sleep
@@ -16,6 +17,14 @@ class Player:
         self.pos = pos
         self.shape = ']@['
 
+    def descent(self, fall):
+        if (fall > 0):
+            self.move((fall,0))
+
+    def boost(self, fall):
+        if (fall > 0):
+            self.move((fall*-1,0))
+
     @property
     def pos(self):
         return (self.__pos)
@@ -31,11 +40,12 @@ class Player:
     def reset(self):
         self.pos = (1,0)
 
-    def control(self, key, scr):
+    def control(self, key, scr, fall):
         try:
             if key != -1:
                 if key == 119 or key == 259: #w
-                    self.move((-1,0))
+                    #self.move((-1,0))
+                    self.boost(fall)
                 elif key == 115 or key == 258: #s
                     self.move((1,0))
                 elif key == 97 or key == 260: #a
@@ -104,11 +114,11 @@ class Engine:
     
     def determine_fall(self, config):
         if config == 'Easy': #moon
-            return (2)
+            return (10)
         elif config == 'Medium': #mars
             return (5)
         elif config == 'Hard': #earth
-            return (10)
+            return (3)
         else:
             return (False)
 
@@ -121,6 +131,7 @@ class Engine:
         self.loop(stdscr, scr, blank_win, terrain)  
           
     def loop(self, stdscr, scr, blank_win, terrain):
+        iteration = 0
         while True:
             terrain.show()
             #curses.flushinp()
@@ -128,12 +139,16 @@ class Engine:
             blank_win.clear()
             try:
                 blank_win.mvwin(self.ship.pos[0], self.ship.pos[1])
+                iteration += 1
+                if iteration % self.fall == 1:
+                    self.ship.descent(1)
             except curses.error:
                 self.end_screen(stdscr, scr, "GameOver you got lost")
                 break
             #terrain.show()
             scr.resize()
-            self.ship.control(stdscr.getch(), scr)
+            self.ship.control(stdscr.getch(), scr, self.fall)
+
             self.clean_up(scr, blank_win)
             if terrain.is_below(self.ship.pos):
                 if terrain.landed(self.ship.pos):
@@ -142,6 +157,7 @@ class Engine:
                     text = "GameOver you hit the terrain"
                 self.end_screen(stdscr, scr, text)
                 break
+
     def end_screen(self, stdscr, scr, text):
         stdscr.clear()
         stdscr.addstr(scr.y // 2, (scr.x // 2) - (len(text) // 2), text)
