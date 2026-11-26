@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from random import randint
 import curses
 from curses import wrapper
 from time import sleep
@@ -37,8 +38,8 @@ class Player:
         curses.flushinp()
         self.pos = tuple(x + y for x, y in zip(self.pos, speed))
 
-    def reset(self):
-        self.pos = (1,0)
+    def reset(self, x):
+        self.pos = (1, randint(0, x))
 
     def control(self, key, scr, fall):
         try:
@@ -123,12 +124,15 @@ class Engine:
             return (False)
 
     def start(self, stdscr, scr):
-        self.ship.reset()
         scr.resize()
-        terrain = Terrain(scr.y, scr.x, self.difficulty)
-        blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
-        terrain.show()
-        self.loop(stdscr, scr, blank_win, terrain)  
+        if scr.y < 20:
+            self.end_screen(stdscr, scr, f"!!!Please resize screen to be 20 tall (currently {scr.y})!!!")
+        else:
+            self.ship.reset(scr.x)
+            terrain = Terrain(scr.y, scr.x, self.difficulty)
+            blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
+            terrain.show()
+            self.loop(stdscr, scr, blank_win, terrain)  
           
     def loop(self, stdscr, scr, blank_win, terrain):
         iteration = 0

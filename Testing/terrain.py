@@ -172,7 +172,7 @@ class Terrain:
                     pass
     
     def landed(self, pos):
-        return pos[1] in range(self.__land, self.__land + self.__breadth + 1)
+        return pos[1] in range(self.__land -1, self.__land + self.__breadth - 3)
     
     def is_below(self, pos):
         """True if the point (y, x) is on or below the terrain curve.
