@@ -14,9 +14,9 @@ class Game_screen():
 
 class Player:
     def __init__(self, pos=(1,0)):
-        self.size = (1,5)
         self.pos = pos
         self.shape = ']@['
+        self.size = (1, len(self.shape) + 2)
 
     def descent(self, fall):
         if (fall > 0):
@@ -130,7 +130,7 @@ class Engine:
         else:
             self.ship.reset(scr.x)
             terrain = Terrain(scr.y, scr.x, self.difficulty)
-            blank_win = curses.newwin(1, 5, self.ship.pos[0], self.ship.pos[1])
+            blank_win = curses.newwin(self.ship.size[0], self.ship.size[1], self.ship.pos[0], self.ship.pos[1])
             terrain.show()
             self.loop(stdscr, scr, blank_win, terrain)  
           
@@ -155,7 +155,7 @@ class Engine:
 
             self.clean_up(scr, blank_win)
             if terrain.is_below(self.ship.pos):
-                if terrain.landed(self.ship.pos):
+                if terrain.landed(self.ship.pos, len(self.ship.shape)):
                     text = "Congrats you landed!"
                 else:
                     text = "GameOver you hit the terrain"

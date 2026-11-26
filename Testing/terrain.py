@@ -171,8 +171,8 @@ class Terrain:
                     """bottom-right cell raises safe to ignore"""
                     pass
     
-    def landed(self, pos):
-        return pos[1] in range(self.__land -1, self.__land + self.__breadth - 3)
+    def landed(self, pos, ship_len):
+        return pos[1] in range(self.__land, self.__land + self.__breadth - ship_len - 1)
     
     def is_below(self, pos):
         """True if the point (y, x) is on or below the terrain curve.
